@@ -90,6 +90,8 @@ app.get("/load", (req, res) => {
 
 app.post("/load", (req, res) => {
 	//  TODO: fetch user data (filename and password)
+  let filename = req.body.filename;
+  let password = req.body.password;
 
 	fs.readFile(walletDirectory + filename, "utf8", (err, jsonWallet) => {
 		//  Error handling
@@ -104,6 +106,23 @@ app.post("/load", (req, res) => {
 		}
 
 		//  TODO: decrypt the wallet
+    ethers.Wallet.fromEncryptedJson(jsonWallet, password)
+      .then((wallet) => {
+        drawView(res, 'load', {
+          address: wallet.address,
+          privateKey: wallet.privateKey,
+          mnemonic: wallet.mnemonic.phrase,
+          error: undefined,
+        });
+      })
+      .catch((err) => {
+        drawView(res, 'load', {
+          address: undefined,
+          privateKey: undefined,
+          mnemonic: undefined,
+          error: 'Bad password: ' + err.message,
+        });
+      });
 	});
 });
 
