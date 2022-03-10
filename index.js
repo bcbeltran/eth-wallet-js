@@ -1,166 +1,205 @@
-const fs = require('fs')
-const path = require('path')
-const express = require('express')
+const fs = require("fs");
+const path = require("path");
+const express = require("express");
 
-const app = express()
+const app = express();
 
 //  TODO: require ethers.js
-const ethers = require('ethers');
+const ethers = require("ethers");
 
 //  TODO: set provider to be ropsten
-const provider = ethers.getDefaultProvider('ropsten');
+const provider = ethers.getDefaultProvider("ropsten");
 
 //  TODO: set wallets directory
-const walletDirectory = 'wallets/';
+const walletDirectory = "wallets/";
 
 if (!fs.existsSync(walletDirectory)) {
-  fs.mkdirSync(walletDirectory)
+	fs.mkdirSync(walletDirectory);
 }
 
-app.use(express.urlencoded({ extended: false }))
-app.use(express.json())
-app.set('view engine', 'ejs')
-app.engine('html', require('ejs').renderFile)
-app.use(express.static('public'))
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+app.set("view engine", "ejs");
+app.engine("html", require("ejs").renderFile);
+app.use(express.static("public"));
 
 //  Homepage
-app.get('/', (req, res) => {
-  res.render(__dirname + '/views/index.html')
-})
+app.get("/", (req, res) => {
+	res.render(__dirname + "/views/index.html");
+});
 
 //  Page for creating a wallet
-app.get('/create', (req, res) => {
-  res.render(__dirname + '/views/create.html')
-})
+app.get("/create", (req, res) => {
+	res.render(__dirname + "/views/create.html");
+});
 
 //  Create endpoint
-app.post('/create', (req, res) => {
-  //  TODO: fetch user input fields (password and confirmPassword)
+app.post("/create", (req, res) => {
+	//  TODO: fetch user input fields (password and confirmPassword)
+	let password = req.body.password;
+	let confirmPassword = req.body.confirmPassword;
 
-  //  TODO: Make simple validation
+	//  TODO: Make simple validation
+	if (password !== confirmPassword) {
+		res.render(path.join(__dirname, "views", "create.html"), {
+			mnemonic: undefined,
+			jsonWallet: undefined,
+			filename: null,
+			error: "Passwords do not match",
+		});
+		return false;
+	}
 
-  //  TODO: Generate wallet from mnemonic
+	//  TODO: Generate wallet from mnemonic
+	const wallet = new ethers.Wallet.createRandom();
 
-  //  TODO: Encrypt and save as json file
-})
+	//  TODO: Encrypt and save as json file
+	wallet.encrypt(password).then((jsonWallet) => {
+		let filename =
+			"UTC_JSON_WALLET_" +
+			Math.round(+new Date() / 1000) +
+			"_" +
+			Math.random(10000, 10000) +
+			".json";
+
+		// TODO: Make a file with the wallet data
+		fs.writeFile(walletDirectory + filename, jsonWallet, "utf-8", (err) => {
+			if (err) {
+				drawView(res, "create", {
+					mnemonic: undefined,
+					jsonWallet: undefined,
+					filename: undefined,
+					error: "Problem writing to disk" + err.message,
+				});
+			} else {
+				drawView(res, "create", {
+					mnemonic: wallet.mnemonic.phrase,
+					jsonWallet: JSON.stringify(jsonWallet),
+					filename: filename,
+					error: undefined,
+				});
+			}
+		});
+	});
+});
 
 //load your wallet
-app.get('/load', (req, res) => {
-  res.render(__dirname + '/views/load.html')
-})
+app.get("/load", (req, res) => {
+	res.render(__dirname + "/views/load.html");
+});
 
-app.post('/load', (req, res) => {
-  //  TODO: fetch user data (filename and password)
+app.post("/load", (req, res) => {
+	//  TODO: fetch user data (filename and password)
 
-  fs.readFile(walletDirectory + filename, 'utf8', (err, jsonWallet) => {
-    //  Error handling
-    if (err) {
-      drawView(res, 'load', {
-        address: undefined,
-        privateKey: undefined,
-        mnemonic: undefined,
-        error: "The file doesn't exist",
-      })
-      return
-    }
+	fs.readFile(walletDirectory + filename, "utf8", (err, jsonWallet) => {
+		//  Error handling
+		if (err) {
+			drawView(res, "load", {
+				address: undefined,
+				privateKey: undefined,
+				mnemonic: undefined,
+				error: "The file doesn't exist",
+			});
+			return;
+		}
 
-    //  TODO: decrypt the wallet
-  })
-})
-
-//recover wallet
-app.get('/recover', (req, res) => {
-  res.render(__dirname + '/views/recover.html')
-})
+		//  TODO: decrypt the wallet
+	});
+});
 
 //recover wallet
-app.post('/recover', (req, res) => {
-  //  TODO: fetch user data (mnemonic and password)
+app.get("/recover", (req, res) => {
+	res.render(__dirname + "/views/recover.html");
+});
 
-  //  TODO: make wallet instance of this mnemonic
+//recover wallet
+app.post("/recover", (req, res) => {
+	//  TODO: fetch user data (mnemonic and password)
 
-  //  TODO: encrypt and save the wallet
-  wallet.encrypt(password).then((jsonWallet) => {
-    let filename =
-      'UTC_JSON_WALLET_' +
-      Math.round(+new Date() / 1000) +
-      '_' +
-      Math.random(10000, 10000) +
-      '.json'
+	//  TODO: make wallet instance of this mnemonic
 
-    //  TODO: Make a file with the wallet data
-  })
-})
+	//  TODO: encrypt and save the wallet
+	wallet.encrypt(password).then((jsonWallet) => {
+		let filename =
+			"UTC_JSON_WALLET_" +
+			Math.round(+new Date() / 1000) +
+			"_" +
+			Math.random(10000, 10000) +
+			".json";
 
-app.get('/balance', (req, res) => {
-  res.render(__dirname + '/views/balance.html')
-})
+		//  TODO: Make a file with the wallet data
+	});
+});
 
-app.post('/balance', (req, res) => {
-  //  TODO: fetch user data (filename and password)
+app.get("/balance", (req, res) => {
+	res.render(__dirname + "/views/balance.html");
+});
 
-  //  read the file
-  fs.readFile(walletDirectory + filename, 'utf8', async (err, jsonWallet) => {
-    if (err) {
-      drawView(res, 'balance', {
-        wallets: undefined,
-        error: 'Error with file writing',
-      })
-    }
+app.post("/balance", (req, res) => {
+	//  TODO: fetch user data (filename and password)
 
-    ethers.Wallet.fromEncryptedJson(jsonWallet, password)
-      .then(async (wallet) => {
-        //  TODO: generate 5 wallets from your master key
+	//  read the file
+	fs.readFile(walletDirectory + filename, "utf8", async (err, jsonWallet) => {
+		if (err) {
+			drawView(res, "balance", {
+				wallets: undefined,
+				error: "Error with file writing",
+			});
+		}
 
-        let derivationPath = "m/44'/60'/0'/0/"
-        let wallets = []
-      })
-  })
-})
+		ethers.Wallet.fromEncryptedJson(jsonWallet, password).then(
+			async (wallet) => {
+				//  TODO: generate 5 wallets from your master key
 
-app.get('/send', (req, res) => {
-  res.render(__dirname + '/views/send.html')
-})
+				let derivationPath = "m/44'/60'/0'/0/";
+				let wallets = [];
+			}
+		);
+	});
+});
 
-app.post('/send', (req, res) => {
-  //  TODO: fetch user data (recipient,private key, and amount)
+app.get("/send", (req, res) => {
+	res.render(__dirname + "/views/send.html");
+});
 
-  //  Simple validation
-  if (
-    recipient === '' ||
-    (recipient === undefined && privateKey === '') ||
-    (privateKey === undefined && amount === '') ||
-    amount === undefined ||
-    amount <= 0
-  ) {
-    return
-  }
+app.post("/send", (req, res) => {
+	//  TODO: fetch user data (recipient,private key, and amount)
 
-  let wallet
+	//  Simple validation
+	if (
+		recipient === "" ||
+		(recipient === undefined && privateKey === "") ||
+		(privateKey === undefined && amount === "") ||
+		amount === undefined ||
+		amount <= 0
+	) {
+		return;
+	}
 
-  try {
-    //  TODO: make instance of the wallet
-    
-  } catch (err) {
-    drawView(res, 'send', {
-      transactionHash: undefined,
-      error: err.message,
-    })
-    return
-  }
+	let wallet;
 
-  let gasPrice = 6
-  let gas = 21000
+	try {
+		//  TODO: make instance of the wallet
+	} catch (err) {
+		drawView(res, "send", {
+			transactionHash: undefined,
+			error: err.message,
+		});
+		return;
+	}
 
-  //  TODO: broadcast the transaction to the network
-})
+	let gasPrice = 6;
+	let gas = 21000;
+
+	//  TODO: broadcast the transaction to the network
+});
 
 // Preset helper functions ===
 
 function drawView(res, view, data) {
-  res.render(__dirname + '/views/' + view + '.html', data)
+	res.render(__dirname + "/views/" + view + ".html", data);
 }
 
 app.listen(3000, () => {
-  console.log('App running on http://localhost:3000')
-})
+	console.log("App running on http://localhost:3000");
+});
