@@ -222,6 +222,9 @@ app.get("/send", (req, res) => {
 
 app.post("/send", (req, res) => {
 	//  TODO: fetch user data (recipient,private key, and amount)
+  let recipient = req.body.recipient;
+  let privateKey = req.body.privateKey;
+  let amount = req.body.amount;
 
 	//  Simple validation
 	if (
@@ -238,6 +241,7 @@ app.post("/send", (req, res) => {
 
 	try {
 		//  TODO: make instance of the wallet
+    wallet = new ethers.Wallet(privateKey, provider);
 	} catch (err) {
 		drawView(res, "send", {
 			transactionHash: undefined,
@@ -250,6 +254,24 @@ app.post("/send", (req, res) => {
 	let gas = 21000;
 
 	//  TODO: broadcast the transaction to the network
+  wallet.sendTransaction({
+    to: recipient,
+    value: ethers.utils.parseEther(amount),
+    gasLimit: gas * gasPrice,
+  })
+  .then((transaction) => {
+    drawView(res, 'send', {
+      transactionHash: transaction.hash,
+      error: undefined,
+    });
+  })
+  .catch((err) => {
+    console.log(err);
+    drawView(res, 'send', {
+      transactionHash: undefined,
+      error: err.message,
+    });
+  });
 });
 
 // Preset helper functions ===

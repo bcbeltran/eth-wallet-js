@@ -1,0 +1,7 @@
+Faucet tx link:
+
+https://ropsten.etherscan.io/tx/0xbdde977104a714038984c485613451acff28e58e04b94708d5e26df059c71389
+
+Wallet to wallet tx link:
+
+https://ropsten.etherscan.io/tx/0x8d9bda5652f4b73c096747a4e65ad15947506deac8ad3caa17bfa57c0fa82c02
