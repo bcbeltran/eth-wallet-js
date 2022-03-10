@@ -134,8 +134,11 @@ app.get("/recover", (req, res) => {
 //recover wallet
 app.post("/recover", (req, res) => {
 	//  TODO: fetch user data (mnemonic and password)
+  let mnemonic = req.body.mnemonic;
+  let password = req.body.password;
 
 	//  TODO: make wallet instance of this mnemonic
+  const wallet = ethers.Wallet.fromMnemonic(mnemonic);
 
 	//  TODO: encrypt and save the wallet
 	wallet.encrypt(password).then((jsonWallet) => {
@@ -147,6 +150,23 @@ app.post("/recover", (req, res) => {
 			".json";
 
 		//  TODO: Make a file with the wallet data
+    fs.writeFile(walletDirectory + filename, jsonWallet, 'utf-8', (err) => {
+      if (err) {
+        drawView(res, 'recover', {
+          message: undefined,
+          filename: undefined,
+          mnemonic: undefined,
+          error: 'Recovery error: ' + err.message,
+        });
+      } else {
+        drawView(res, 'recover', {
+          message: 'Wallet recovery successful!',
+          filename: filename,
+          mnemonic: wallet.mnemonic.phrase,
+          error: undefined,
+        });
+      }
+    });
 	});
 });
 
